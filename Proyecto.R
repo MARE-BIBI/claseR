@@ -26,10 +26,66 @@ Peliculas_año = data.frame(table(Tabla_Final$startYear))
 
 plot(x = Peliculas_año)
 
+
+
 #Filtro Tabla_Final del año 2009 al año 2019 (por la pandemia)
 
 Data_Final= Tabla_Final %>%  filter(startYear>2008&startYear<2020)
 
+# Generar top 5 generos con más votos
+
+Top5_generos = Data_Final %>% group_by(genres) %>% summarize(promedio_votantes = mean(numVotes)) %>%
+  arrange(desc(promedio_votantes))
+
+generos_seleccionados= c("Adventure,Drama,War","Action,Adventure,Sci-Fi","Adventure,Fantasy,Mystery","Adventure,Mystery,Sci-Fi","	
+Adventure,Drama,Sci-Fi")
+
+Filtro_Top5= Data_Final%>% filter(genres %in% generos_seleccionados)
+
+#grafico de genero más votados:
+
+ggplot(data=Filtro_Top5, aes(x=genres,y=numVotes)) + geom_bar(stat="identity", position="stack")
+
+#Número de titulos por cada genero:
+
+Titulos_Genero = data.frame(table(Filtro_Top5$genres))
+
+#grafico de titulos por cada genero:
+
+ggplot(Titulos_Genero,aes(x="",y=Freq, fill=Var1))+
+  geom_bar(stat = "identity",
+           color="white")+
+  geom_text(aes(label=Freq),
+            position=position_stack(vjust=0.5),color="white",size=6)+
+  coord_polar(theta = "y")
+
+#Pelicula con mejor Rating:
+
+Top5_Rating = Data_Final %>% group_by(genres) %>% summarize(promedio_Rating = mean(averageRating)) %>%
+  arrange(desc(promedio_Rating))
+
+Rating_seleccionado= c("Drama,History,News","Documentary,News,Reality-TV","Action,History,Musical","Action,Fantasy,Musical","Comedy,Talk-Show")
+
+Resumen_Rating= Data_Final %>% filter(genres %in% Rating_seleccionado)
+
+#grafico de Rating:
+  
+ggplot(data=Resumen_Rating, aes(x=Rating_seleccionado,y=averageRating)) + geom_bar(stat="identity", position="stack")
+
+# graficnúmero de votos por genero mejor Rating.
+
+ggplot(data=Resumen_Rating, aes(x=Rating_seleccionado,y=numVotes)) + geom_bar(stat="identity", position="stack")
+
+# ahora se seleccionara las peliculas con mejor Rating:
+
+Data_ordenada_Votos= Data_Final %>% arrange(desc(numVotes))
+
+
+# peliculas top 5: Falta hacer grafico() voy acá
+
+Top5_Peliculas= c("Inception","Interstellar","The Dark Knight Rises","Django Unchained","Inglourious Basterds")
+
+Resumen_peliculas_Top= Data_Final %>% filter(numVotes %in% Top5_Peliculas)
 
 
 
@@ -39,9 +95,38 @@ Data_Final= Tabla_Final %>%  filter(startYear>2008&startYear<2020)
 
 
 
-ggplot(Peliculas_año, aes(Freq,Var1 )) +
-  geom_area(fill = rgb(0, 0.5,1, alpha = 0.5))+
-  ggtitle("Titulos año")
+
+
+
+
+
+
+
+
+
+#Filtrar por top 5 más votados:
+
+Top5_generos_peliculas=c("Action,Adventure,Sci-Fi","Adventure,Drama,Sci-Fi","Action,Crime,Drama","Drama,Western","Adventure,Drama,War")
+
+Resumen_Top_genero_peli= Data_Final %>% filter(genres %in% Top5_generos_peliculas)
+
+Peliculas_año_generosTop5 = data.frame(table(Resumen_Top_genero_peli$numVotes))
+
+Peliculas_año_ = data.frame(table(Peliculas_año_generosTop5$numVotes))
+
+
+# Generos que más votación tienen
+contar_genero= Tabla_Final%>% count(genres)
+
+
+
+
+
+
+
+
+
+
 
 
 
