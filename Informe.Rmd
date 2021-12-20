@@ -1,0 +1,232 @@
+---
+title: "Proyección del género de película para usuarios de IMDB"
+author: "Marelin Alvarán"
+Diplomado: "Argumentación y Narrativa Soportada en Análisis de Datos"
+date: "17/12/2021"
+output: html_document
+---
+
+
+### Introducción
+
+Este proyecto se enmarca en el sector cinematográfico ya que se utilizan datos generados por la plataforma IMBd, siendo esta una base de datos en línea que permite acceder a información relacionada con películas, programas de televisión, eventos en vivo, entre otros.El tráfico de IMBD es de aproximadamente 100 millones de usuarios al mes, además cuenta con un sistema de calificación de películas donde los diferentes miembros de la industria y usuarios pueden votar sólo con estar registrados.
+
+Para el procesamiento adecuado de los datos se hará un proceso de limpieza donde se eliminarán aquellos registros considerados como erróneos o nulos, se mantendrán los campos que van a ser usados y estos se transformarán en caso de que sea necesario para realizar el análisis descriptivo de la información.
+
+Finalmente, el objetivo final será determinar el género más votado al cabo de 5 años utilizando un algoritmo de Machine Leaning de aprendizaje supervisado de tipo regresión.
+
+
+### Definición del Problema:
+
+Es difícil identificar a simple vista tendencias en la votación de los usuarios de la plataforma, por este motivo Se busca determinar a traves del análisis de datos el género más votado por los usuarios de IMBD al cabo de 5 años
+
+
+### Justificación:
+
+La industria cinematográfica fue una de las más afectadas por la pandemia, por esto el pronosticar el género de película más visto de los usuarios de IMBd puede ayudar a esta industria en la toma de decisiones al invertir en un nuevo proyecto en un género que se ha probado que gusta y evitando generar perdidas por producciones no rentables.
+
+
+### Fuentes:
+
+IMDB:Es una fuente autorizada de contenido de películas, televisión y celebridades. Publican nuevos avances, actualizaciones de casting, fotos, curiosidades, noticias de la industria y más.
+
+LINK IMDB: https://www.imdb.com/?ref_=nv_home
+
+Logo: ![](https://upload.wikimedia.org/wikipedia/commons/6/6a/New-imdb-logo.png){width='100px'}
+
+
+### Hipótesis
+
+* El género de acción, aventura y ciencia ficción será el género más votado en la plataforma al cabo de 5 años.
+
+
+A continuación se cargan los paquetes necesarios para el análisis:
+
+```{r}
+#Se importan librerías: 
+
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(DT)
+```
+
+### Estructura de la Base de datos inicial
+
+Ahora se importa la base de datos y se muestra como es la base de datos que se tiene inicialmente:
+
+```{r} 
+# Carga de datos:
+
+Tabla_Final= read_xlsx("Data/Tabla_Final.xlsx")
+
+```
+
+
+Se modifica el nombre asignado para cada uno de los atributos de la base original, esto se hizo con el fin de facilitar la lectura de la información: 
+
+
+```{r}
+#Modificar nombre de los atributos:
+names(Tabla_Final)[1]="Identificador"
+names(Tabla_Final)[2]= "Tipo_Titulo"
+names(Tabla_Final)[3]= "Nombre_Pelicula"
+names(Tabla_Final)[4]= "Adulto"
+names(Tabla_Final)[5]= "Año_Inicio"
+names(Tabla_Final)[6]= "Duración_Pelicula"
+names(Tabla_Final)[7]= "Genero"
+names(Tabla_Final)[8]= "Rating"
+names(Tabla_Final)[9]= "Numero_Votos"
+
+Tabla_Final
+```
+
+### Descripción de los datos:
+
+Para el análisis de los datos actualmente cuenta con  168.878 datos y 9 atributos, a continuación se describe la información que contiene: 
+
+  + Identificador (Nominal): Este es el código identificador alfanumérico del título.
+  + Tipo_Titulo (Nominal): El tipo/formato del título (por ejemplo, película, corto, serie de televisión, episodio, vídeo, etc)
+  + Nombre_Pelicula (Nominal): El título más popular / el título utilizado por los cineastas en los materiales promocionales en el momento del lanzamiento.
+  +  Adulto (Binario): 0: título no adulto; 1: título para adultos
+  +  Año_Inicio: Representa el año de lanzamiento de un título. En el caso de las series de televisión, es el año de inicio de la serie.
+  + Duración_Pelicula: Tiempo de ejecución principal del título, en minutos.
+  + Genero: Contiene la información de los géneros a los que pertenece cada título.
+  + Rating (Continúa): promedio ponderado de todas las calificaciones de los usuarios individuales.
+  + Numero_Votos (Discreta): número de votos que ha recibido el título.
+  
+En la siguiente tabla se puede visualizar si las variables de la base de datos son cualitativas o cuantitativas:
+  
+**Identificador** |**Tipo_Titulo**|**Nombre_Pelicula**|**Año_Inicio**|**Duración_Pelicula**|**Genero**|**Rating**|**Numero_Votos**|
+----------| -------------|-------------|-------------|-------------|-------------|-------------|-----------|-----------|
+*Cualitativa* | *Cualitativa* | *Cualitativa* | *Cualitativa* |*Cuantitativa* |*Cualitativa* |*Cuantitativa* | *Cuantitativa* |
+
+
+### Limpieza de datos:
+
+* La base de datos inicialmente tenía un total de 171.743 datos, al verificar el género por película se encontró que el 1,7% de los datos no lo tenía asociado. La limpieza de estos datos se hizo en Jupyter.
+
+```{r}
+Nulos= 2.865
+Registros_totales= 171.743
+
+Porcentaje_nulos = (Nulos/Registros_totales*100)
+Porcentaje_nulos
+```
+
+
+* Para la limpieza de la base de datos se va a descartar los años que no tengan una cantidad de votos considerable.
+
+Actualmente, en la base de datos se tiene un registro de las películas que fueron lanzadas a partir del año 2000, en el siguiente gráfico se puede visualizar que del año 2000 al año 2019 los usuarios de IMBD estuvieron muy activos en las votaciones, esto cambia a partir del año 2020 justo cuando inicia la pandemia:
+
+```{r}
+#Grafico de barras Año Lanzamiento/Número de votos
+ggplot(data=Tabla_Final, aes(x=Año_Inicio,y=Numero_Votos)) + geom_bar(stat="identity")
+```
+
+
+Teniendo en cuenta que apartir del año 2019 se tienen datos atípicos por la pandemia, estas observaciones se eliminan, siendo un total de 25.221 datos:
+
+```{r}
+#Filtro Tabla_Final del año 2000 al año 2019 (por la pandemia)
+
+Data_Final= Tabla_Final %>%  filter(Año_Inicio>=2000&Año_Inicio<2019)
+```
+Finalmente quedamos con la información del año 2000 al año 2019, con un total de 143.757 observaciones.
+
+### Análisis descriptivo
+
+Para realizar la proyección de género más votado por los usuarios de la plataforma, es importante saber que les gusta hoy en día y para esto partiremos de la siguiente hipótesis:
+
+"El género de acción, aventura y ciencia ficción es el género más votado en IMBD", ¿sera este el género más votado por los usuarios de la plataforma?
+Para responder a esta pregunta se seleccionan los siguientes variables  para el análisis descriptivo del problema:
+
+ + Genero
+ + Numero_Votos
+
+
+```{r}
+Data_nueva= Data_Final %>% select(Genero,Numero_Votos)
+datatable(Data_nueva)
+```
+
+A continuación voy a agrupar y ordenar la base de datos por géneros para identificar el top 5 de los más votados por los usuarios de la plataforma:
+
+
+```{r}
+Top5_generos = Data_nueva %>% group_by(Genero) %>% summarize(Promedio_votantes = sum(Numero_Votos)) %>%
+arrange(desc(Promedio_votantes))
+
+```
+
+Géneros seleccionados:
+
+  + Action,Adventure,Sci-Fi
+  + Adventure,Animation,Comedy
+  + Comedy,Drama,Romance
+  + Action,Crime,Drama
+  + Drama
+
+```{r}
+generos_seleccionados=c("Action,Adventure,Sci-Fi","Adventure,Animation,Comedy","Comedy,Drama,Romance","Action,Crime,Drama","Drama")
+
+Data_Top5_generos= Data_nueva%>% filter(Genero %in% generos_seleccionados)
+
+datatable(Data_Top5_generos)
+```
+
+La hipótesis es correcta siempre y cuando la suma de los votos del género  Action,Adventure,Sci-Fi sea mayor a los demás géneros del top 5. Para confirmar esto se agruparon los géneros del top 5 y se sumaron los votos totales obtenidos por cada uno, también se calculó el promedio de votos para cada categoría: 
+
+```{r}
+Votos_Genero_ = Data_Top5_generos%>% group_by(Genero) %>% 
+  summarize(Suma_votacion= sum(Numero_Votos)) %>% 
+  mutate(Promedio_votacion= round(Suma_votacion/119481869*100,2))%>% 
+  arrange(desc(Suma_votacion))
+datatable(Votos_Genero_)
+```
+
+```{r}
+sum(Votos_Genero_$Suma_votacion)
+```
+
+La suma total de votos de los géneros más votados por los usuarios es de 119.481.869 de los cuales un 32,16% de los votos  corresponde al género de acción, aventura y ciencia ficción, rebasando a las demás categorías, por lo tanto, esto confirma mi hipótesis y efectivamente el género  acción, aventura y ciencia ficción es el más votado por los usuarios de IMBD:
+
+```{r}
+ggplot(Votos_Genero_,mapping = aes(x="",y=Promedio_votacion, fill=Genero))+
+  geom_bar(stat = "identity",color="white")+
+  geom_text(aes(label=Promedio_votacion),
+              position=position_stack(vjust=0.5),color="white",size=6)+
+  coord_polar(theta = "y")
+```
+
+La votación total obtenida por el género acción, aventura y ciencia ficción fue de 338.420.949, mientras que los otros 4 géneros tienen una votación promedio de 23896374: 
+
+
+```{r}
+generos_seleccionado= c("Adventure,Animation,Comedy","Comedy,Drama,Romance","Action,Crime,Drama","Drama")
+
+Data_Top5_gener= Data_nueva%>% filter(Genero %in% generos_seleccionado)
+
+mean(Votos_Genero_$Suma_votacion)
+
+```
+
+
+```{r}
+#Barras con número de votos:
+ggplot(data=Votos_Genero_, aes(x=Genero,y=Suma_votacion)) + geom_bar(stat="identity", position="stack")+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+
+
+
+### CONCLUSIONES: 
+
+
+* Mi hipótesis es correcta y el género de Action,Adventure,Sci-Fi es el género más votado en IMBD, por lo que sigo pensando que al determinar el género más votado por los usuarios al cabo de 5 años, este seguirá manteniéndose como el número 1.
+
+
+
+
+
